@@ -66,7 +66,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
             <h2
               onClick={() => {
                 const data = getCookie("token");
-                setName(data);
+                setName(data as string);
               }}
               className="text-2xl font-bold text-white"
             >

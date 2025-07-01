@@ -104,32 +104,238 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
+var CookieManager = /** @class */ (function () {
+    function CookieManager(config) {
+        if (config === void 0) { config = {}; }
+        this.config = __assign({ defaultPath: '/', defaultSecure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false, defaultSameSite: 'lax' }, config);
+    }
+    // Set a cookie
+    CookieManager.prototype.set = function (name, value, options) {
+        var _a, _b, _c, _d;
+        if (options === void 0) { options = {}; }
+        console.log('sdkcmsxcmsxk msx::sagar22');
+        if (typeof document === 'undefined') {
+            console.warn('CookieManager: document is not available (SSR environment)');
+            return false;
+        }
+        try {
+            var cookieName = this.config.prefix ? "".concat(this.config.prefix).concat(name) : name;
+            var cookieString = "".concat(encodeURIComponent(cookieName), "=").concat(encodeURIComponent(value));
+            // Handle expires
+            if (options.expires) {
+                if (typeof options.expires === 'number') {
+                    // Convert days to date
+                    var date = new Date();
+                    date.setTime(date.getTime() + (options.expires * 24 * 60 * 60 * 1000));
+                    cookieString += "; expires=".concat(date.toUTCString());
+                }
+                else {
+                    cookieString += "; expires=".concat(options.expires.toUTCString());
+                }
+            }
+            // Handle maxAge
+            if (options.maxAge !== undefined) {
+                cookieString += "; max-age=".concat(options.maxAge);
+            }
+            // Handle path
+            var path = (_a = options.path) !== null && _a !== void 0 ? _a : this.config.defaultPath;
+            if (path) {
+                cookieString += "; path=".concat(path);
+            }
+            // Handle domain
+            var domain = (_b = options.domain) !== null && _b !== void 0 ? _b : this.config.defaultDomain;
+            if (domain) {
+                cookieString += "; domain=".concat(domain);
+            }
+            // Handle secure
+            var secure = (_c = options.secure) !== null && _c !== void 0 ? _c : this.config.defaultSecure;
+            if (secure) {
+                cookieString += '; secure';
+            }
+            // Handle httpOnly (note: this can't be set via JavaScript)
+            if (options.httpOnly) {
+                console.warn('CookieManager: httpOnly flag cannot be set via JavaScript');
+            }
+            // Handle sameSite
+            var sameSite = (_d = options.sameSite) !== null && _d !== void 0 ? _d : this.config.defaultSameSite;
+            if (sameSite) {
+                cookieString += "; samesite=".concat(sameSite);
+            }
+            document.cookie = cookieString;
+            return true;
+        }
+        catch (error) {
+            console.error('CookieManager: Error setting cookie', error);
+            return false;
+        }
+    };
+    // Get a cookie value
+    CookieManager.prototype.get = function (name) {
+        if (typeof document === 'undefined') {
+            return null;
+        }
+        try {
+            var cookieName = this.config.prefix ? "".concat(this.config.prefix).concat(name) : name;
+            var encodedName = encodeURIComponent(cookieName);
+            var cookies = document.cookie.split(';');
+            for (var _i = 0, cookies_1 = cookies; _i < cookies_1.length; _i++) {
+                var cookie = cookies_1[_i];
+                cookie = cookie.trim();
+                if (cookie.startsWith("".concat(encodedName, "="))) {
+                    return decodeURIComponent(cookie.substring(encodedName.length + 1));
+                }
+            }
+            return null;
+        }
+        catch (error) {
+            console.error('CookieManager: Error getting cookie', error);
+            return null;
+        }
+    };
+    // Get a cookie value and parse as JSON
+    CookieManager.prototype.getJSON = function (name) {
+        var value = this.get(name);
+        if (value === null)
+            return null;
+        try {
+            return JSON.parse(value);
+        }
+        catch (error) {
+            console.error('CookieManager: Error parsing JSON cookie', error);
+            return null;
+        }
+    };
+    // Set a cookie with JSON value
+    CookieManager.prototype.setJSON = function (name, value, options) {
+        if (options === void 0) { options = {}; }
+        try {
+            var jsonString = JSON.stringify(value);
+            return this.set(name, jsonString, options);
+        }
+        catch (error) {
+            console.error('CookieManager: Error stringifying JSON cookie', error);
+            return false;
+        }
+    };
+    // Remove a cookie
+    CookieManager.prototype.remove = function (name, options) {
+        if (options === void 0) { options = {}; }
+        return this.set(name, '', __assign(__assign({}, options), { expires: new Date(0), maxAge: 0 }));
+    };
+    // Check if a cookie exists
+    CookieManager.prototype.has = function (name) {
+        return this.get(name) !== null;
+    };
+    // Get all cookies as an object
+    CookieManager.prototype.getAll = function () {
+        if (typeof document === 'undefined') {
+            return {};
+        }
+        try {
+            var cookies = {};
+            var cookieStrings = document.cookie.split(';');
+            for (var _i = 0, cookieStrings_1 = cookieStrings; _i < cookieStrings_1.length; _i++) {
+                var cookie = cookieStrings_1[_i];
+                cookie = cookie.trim();
+                var _a = cookie.split('='), encodedName = _a[0], valueParts = _a.slice(1);
+                if (encodedName && valueParts.length > 0) {
+                    var name_1 = decodeURIComponent(encodedName);
+                    var value = decodeURIComponent(valueParts.join('='));
+                    // Remove prefix if it exists
+                    var finalName = this.config.prefix && name_1.startsWith(this.config.prefix)
+                        ? name_1.substring(this.config.prefix.length)
+                        : name_1;
+                    cookies[finalName] = value;
+                }
+            }
+            return cookies;
+        }
+        catch (error) {
+            console.error('CookieManager: Error getting all cookies', error);
+            return {};
+        }
+    };
+    // Clear all cookies (only those with the same prefix if configured)
+    CookieManager.prototype.clear = function (options) {
+        var _this = this;
+        if (options === void 0) { options = {}; }
+        var allCookies = this.getAll();
+        Object.keys(allCookies).forEach(function (name) {
+            _this.remove(name, options);
+        });
+    };
+    // Get cookie size in bytes
+    CookieManager.prototype.getSize = function (name) {
+        var value = this.get(name);
+        if (value === null)
+            return 0;
+        return new Blob([value]).size;
+    };
+    // Get total cookies size
+    CookieManager.prototype.getTotalSize = function () {
+        if (typeof document === 'undefined')
+            return 0;
+        return new Blob([document.cookie]).size;
+    };
+    // Check if cookies are enabled
+    CookieManager.prototype.isEnabled = function () {
+        if (typeof document === 'undefined')
+            return false;
+        try {
+            var testCookie = '__cookie_test__';
+            this.set(testCookie, 'test');
+            var isEnabled = this.has(testCookie);
+            this.remove(testCookie);
+            return isEnabled;
+        }
+        catch (_a) {
+            return false;
+        }
+    };
+    return CookieManager;
+}());
+// Default cookie manager instance
+var cookieManager = new CookieManager();
+// Utility functions for quick access
+var setCookie = function (name, value, options) {
+    return cookieManager.set(name, value, options);
+};
+var getCookie = function (name) {
+    return cookieManager.get(name);
+};
+// Create a custom cookie manager with specific configuration
+var createCookieManager = function (config) {
+    return new CookieManager(config);
+};
+
 var AuthContext = react.createContext(undefined);
 var AuthProvider = function (_a) {
-    var children = _a.children, _b = _a.initialUser, initialUser = _b === void 0 ? null : _b, _c = _a.apiEndpoint, apiEndpoint = _c === void 0 ? '/api/auth' : _c, _d = _a.storageKey, storageKey = _d === void 0 ? 'auth-user' : _d;
+    var children = _a.children, _b = _a.initialUser, initialUser = _b === void 0 ? null : _b, _c = _a.apiEndpoint, apiEndpoint = _c === void 0 ? "/api/auth" : _c, _d = _a.storageKey, storageKey = _d === void 0 ? "auth-user" : _d;
     var _e = react.useState(initialUser), user = _e[0], setUser = _e[1];
     var _f = react.useState(false), isLoading = _f[0], setIsLoading = _f[1];
     var _g = react.useState(null), error = _g[0], setError = _g[1];
     var _h = react.useState(false), isInitialized = _h[0], setIsInitialized = _h[1];
     // SSR-safe initialization
     react.useEffect(function () {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
             try {
                 var storedUser = localStorage.getItem(storageKey);
                 if (storedUser && !initialUser) {
+                    setCookie("storedUser", storedUser);
                     setUser(JSON.parse(storedUser));
                 }
             }
             catch (err) {
-                console.warn('Failed to load user from localStorage:', err);
+                console.warn("Failed to load user from localStorage:", err);
             }
             setIsInitialized(true);
         }
     }, [storageKey, initialUser]);
     // Persist user to localStorage (client-side only)
     react.useEffect(function () {
-        if (typeof window !== 'undefined' && isInitialized) {
+        if (typeof window !== "undefined" && isInitialized) {
             if (user) {
+                setCookie(storageKey, JSON.stringify(user));
                 localStorage.setItem(storageKey, JSON.stringify(user));
             }
             else {
@@ -138,21 +344,25 @@ var AuthProvider = function (_a) {
         }
     }, [user, storageKey, isInitialized]);
     var login = function (email, password) { return __awaiter(void 0, void 0, void 0, function () {
-        var response, data, err_1, errorMessage;
+        var token, response, data, err_1, errorMessage;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     setIsLoading(true);
                     setError(null);
+                    token = getCookie("auth");
+                    console.log("auth from cookies", token);
+                    console.warn("auth from cookies", token);
+                    alert(token);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, 5, 6]);
                     return [4 /*yield*/, fetch("".concat(apiEndpoint, "/login"), {
-                            method: 'POST',
+                            method: "POST",
                             headers: {
-                                'Content-Type': 'application/json',
+                                "Content-Type": "application/json",
                             },
-                            body: JSON.stringify({ email: email, password: password }),
+                            body: JSON.stringify({ email: email, password: password, token: token }),
                         })];
                 case 2:
                     response = _a.sent();
@@ -164,11 +374,11 @@ var AuthProvider = function (_a) {
                         return [2 /*return*/, { success: true, user: data.user }];
                     }
                     else {
-                        throw new Error(data.message || 'Login failed');
+                        throw new Error(data.message || "Login failed");
                     }
                 case 4:
                     err_1 = _a.sent();
-                    errorMessage = err_1 instanceof Error ? err_1.message : 'Login failed';
+                    errorMessage = err_1 instanceof Error ? err_1.message : "Login failed";
                     setError(errorMessage);
                     return [2 /*return*/, { success: false, error: errorMessage }];
                 case 5:
@@ -187,13 +397,13 @@ var AuthProvider = function (_a) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, 4, 5]);
-                    return [4 /*yield*/, fetch("".concat(apiEndpoint, "/logout"), { method: 'POST' })];
+                    return [4 /*yield*/, fetch("".concat(apiEndpoint, "/logout"), { method: "POST" })];
                 case 2:
                     _a.sent();
                     return [3 /*break*/, 5];
                 case 3:
                     err_2 = _a.sent();
-                    console.warn('Logout request failed:', err_2);
+                    console.warn("Logout request failed:", err_2);
                     return [3 /*break*/, 5];
                 case 4:
                     setUser(null);
@@ -211,14 +421,14 @@ var AuthProvider = function (_a) {
         error: error,
         login: login,
         logout: logout,
-        isInitialized: isInitialized
+        isInitialized: isInitialized,
     };
-    return (jsxRuntime.jsx(AuthContext.Provider, __assign({ value: value }, { children: children })));
+    return jsxRuntime.jsx(AuthContext.Provider, __assign({ value: value }, { children: children }));
 };
 var useAuth = function () {
     var context = react.useContext(AuthContext);
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
 };
@@ -363,18 +573,22 @@ const User = createLucideIcon$1("User", [
 ]);
 
 var LoginCard = function (_a) {
-    var onSuccess = _a.onSuccess, _b = _a.className, className = _b === void 0 ? '' : _b, _c = _a.showSignup, showSignup = _c === void 0 ? false : _c, _d = _a.title, title = _d === void 0 ? 'Welcome Back' : _d, _e = _a.subtitle, subtitle = _e === void 0 ? 'Sign in to your account' : _e, customValidator = _a.customValidator;
-    var _f = react.useState(''), email = _f[0], setEmail = _f[1];
-    var _g = react.useState(''), password = _g[0], setPassword = _g[1];
-    var _h = react.useState(''), name = _h[0], setName = _h[1];
+    var onSuccess = _a.onSuccess, _b = _a.className, className = _b === void 0 ? "" : _b, _c = _a.showSignup, showSignup = _c === void 0 ? false : _c, _d = _a.title, title = _d === void 0 ? "Welcome Back" : _d, _e = _a.subtitle, subtitle = _e === void 0 ? "Sign in to your account" : _e, customValidator = _a.customValidator;
+    var _f = react.useState(""), email = _f[0], setEmail = _f[1];
+    var _g = react.useState(""), password = _g[0], setPassword = _g[1];
+    var _h = react.useState(""), name = _h[0], setName = _h[1];
     var _j = react.useState(false), showPassword = _j[0], setShowPassword = _j[1];
-    var _k = react.useState(false), isSignup = _k[0], setIsSignup = _k[1];
+    var _k = react.useState(false), isSignup = _k[0]; _k[1];
     var _l = useAuth(), login = _l.login, isLoading = _l.isLoading, error = _l.error;
+    var storageManager = createCookieManager({});
     var handleSubmit = function () { return __awaiter(void 0, void 0, void 0, function () {
         var result;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    console.log("sdkcmsxcmsxk msx::sagar");
+                    // setCookie("token", "sagarxyz");
+                    storageManager.set("token", "sagarxyz");
                     if (!email || !password)
                         return [2 /*return*/];
                     if (!customValidator) return [3 /*break*/, 2];
@@ -395,11 +609,23 @@ var LoginCard = function (_a) {
         });
     }); };
     var handleKeyPress = function (e) {
-        if (e.key === 'Enter') {
+        if (e.key === "Enter") {
             handleSubmit();
         }
     };
-    return (jsxRuntime.jsx("div", __assign({ className: "w-full max-w-md mx-auto ".concat(className) }, { children: jsxRuntime.jsxs("div", __assign({ className: "bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden" }, { children: [jsxRuntime.jsx("div", __assign({ className: "bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6" }, { children: jsxRuntime.jsxs("div", __assign({ className: "text-center" }, { children: [jsxRuntime.jsx("div", __assign({ className: "inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full mb-4" }, { children: jsxRuntime.jsx(Lock, { className: "w-6 h-6 text-white" }) })), jsxRuntime.jsx("h2", __assign({ className: "text-2xl font-bold text-white" }, { children: title })), jsxRuntime.jsx("p", __assign({ className: "text-blue-100 mt-1" }, { children: subtitle }))] })) })), jsxRuntime.jsx("div", __assign({ className: "p-8" }, { children: jsxRuntime.jsxs("div", __assign({ className: "space-y-6" }, { children: [isSignup && (jsxRuntime.jsxs("div", __assign({ className: "space-y-2" }, { children: [jsxRuntime.jsx("label", __assign({ className: "text-sm font-medium text-gray-700 block" }, { children: "Full Name" })), jsxRuntime.jsxs("div", __assign({ className: "relative" }, { children: [jsxRuntime.jsx(User, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" }), jsxRuntime.jsx("input", { type: "text", value: name, onChange: function (e) { return setName(e.target.value); }, onKeyPress: handleKeyPress, className: "w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200", placeholder: "Enter your full name", autoComplete: "name" })] }))] }))), jsxRuntime.jsxs("div", __assign({ className: "space-y-2" }, { children: [jsxRuntime.jsx("label", __assign({ className: "text-sm font-medium text-gray-700 block" }, { children: "Email Address" })), jsxRuntime.jsxs("div", __assign({ className: "relative" }, { children: [jsxRuntime.jsx(Mail, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" }), jsxRuntime.jsx("input", { type: "email", value: email, onChange: function (e) { return setEmail(e.target.value); }, onKeyPress: handleKeyPress, className: "w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200", placeholder: "Enter your email", autoComplete: "email" })] }))] })), jsxRuntime.jsxs("div", __assign({ className: "space-y-2" }, { children: [jsxRuntime.jsx("label", __assign({ className: "text-sm font-medium text-gray-700 block" }, { children: "Password" })), jsxRuntime.jsxs("div", __assign({ className: "relative" }, { children: [jsxRuntime.jsx(Lock, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" }), jsxRuntime.jsx("input", { type: showPassword ? 'text' : 'password', value: password, onChange: function (e) { return setPassword(e.target.value); }, onKeyPress: handleKeyPress, className: "w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200", placeholder: "Enter your password", autoComplete: "current-password" }), jsxRuntime.jsx("button", __assign({ type: "button", onClick: function () { return setShowPassword(!showPassword); }, className: "absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600" }, { children: showPassword ? jsxRuntime.jsx(EyeOff, { className: "w-5 h-5" }) : jsxRuntime.jsx(Eye, { className: "w-5 h-5" }) }))] }))] })), error && (jsxRuntime.jsx("div", __assign({ className: "bg-red-50 border border-red-200 rounded-lg p-3" }, { children: jsxRuntime.jsx("p", __assign({ className: "text-red-700 text-sm" }, { children: error })) }))), jsxRuntime.jsx("button", __assign({ type: "button", onClick: handleSubmit, disabled: isLoading || !email || !password, className: "w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200" }, { children: isLoading ? (jsxRuntime.jsxs("div", __assign({ className: "flex items-center justify-center" }, { children: [jsxRuntime.jsx("div", { className: "animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" }), "Signing in..."] }))) : (isSignup ? 'Create Account' : 'Sign In') })), showSignup && (jsxRuntime.jsx("div", __assign({ className: "text-center" }, { children: jsxRuntime.jsx("button", __assign({ type: "button", onClick: function () { return setIsSignup(!isSignup); }, className: "text-blue-600 hover:text-blue-700 text-sm font-medium" }, { children: isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up" })) })))] })) }))] })) })));
+    console.log("outside66");
+    return (jsxRuntime.jsx("div", __assign({ className: "w-full max-w-md mx-auto ".concat(className) }, { children: jsxRuntime.jsxs("div", __assign({ className: "bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden" }, { children: [jsxRuntime.jsx("div", __assign({ className: "bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6" }, { children: jsxRuntime.jsxs("div", __assign({ className: "text-center" }, { children: [jsxRuntime.jsx("div", __assign({ className: "inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full mb-4" }, { children: jsxRuntime.jsx(Lock, { className: "w-6 h-6 text-white" }) })), jsxRuntime.jsxs("h2", __assign({ onClick: function () {
+                                    var data = getCookie("token");
+                                    setName(data);
+                                }, className: "text-2xl font-bold text-white" }, { children: [title, name] })), jsxRuntime.jsx("p", __assign({ className: "text-blue-100 mt-1" }, { children: subtitle }))] })) })), jsxRuntime.jsx("div", __assign({ className: "p-8" }, { children: jsxRuntime.jsxs("div", __assign({ className: "space-y-6" }, { children: [isSignup && (jsxRuntime.jsxs("div", __assign({ className: "space-y-2" }, { children: [jsxRuntime.jsx("label", __assign({ className: "text-sm font-medium text-gray-700 block" }, { children: "Full Name" })), jsxRuntime.jsxs("div", __assign({ className: "relative" }, { children: [jsxRuntime.jsx(User, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" }), jsxRuntime.jsx("input", { type: "text", value: name, onChange: function (e) { return setName(e.target.value); }, onKeyPress: handleKeyPress, className: "w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200", placeholder: "Enter your full name", autoComplete: "name" })] }))] }))), jsxRuntime.jsxs("div", __assign({ className: "space-y-2" }, { children: [jsxRuntime.jsx("label", __assign({ className: "text-sm font-medium text-gray-700 block" }, { children: "Email Address" })), jsxRuntime.jsxs("div", __assign({ className: "relative" }, { children: [jsxRuntime.jsx(Mail, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" }), jsxRuntime.jsx("input", { type: "email", value: email, onChange: function (e) { return setEmail(e.target.value); }, onKeyPress: handleKeyPress, className: "w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200", placeholder: "Enter your email", autoComplete: "email" })] }))] })), jsxRuntime.jsxs("div", __assign({ className: "space-y-2" }, { children: [jsxRuntime.jsx("label", __assign({ className: "text-sm font-medium text-gray-700 block" }, { children: "Password" })), jsxRuntime.jsxs("div", __assign({ className: "relative" }, { children: [jsxRuntime.jsx(Lock, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" }), jsxRuntime.jsx("input", { type: showPassword ? "text" : "password", value: password, onChange: function (e) { return setPassword(e.target.value); }, onKeyPress: handleKeyPress, className: "w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200", placeholder: "Enter your password", autoComplete: "current-password" }), jsxRuntime.jsx("button", __assign({ type: "button", onClick: function () { return setShowPassword(!showPassword); }, className: "absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600" }, { children: showPassword ? (jsxRuntime.jsx(EyeOff, { className: "w-5 h-5" })) : (jsxRuntime.jsx(Eye, { className: "w-5 h-5" })) }))] }))] })), error && (jsxRuntime.jsx("div", __assign({ className: "bg-red-50 border border-red-200 rounded-lg p-3" }, { children: jsxRuntime.jsx("p", __assign({ className: "text-red-700 text-sm" }, { children: error })) }))), jsxRuntime.jsx("button", __assign({ type: "button", onClick: function () {
+                                    storageManager.set("token", "sagarxyz");
+                                    alert('"token", "sagarxyz"');
+                                }, disabled: isLoading || !email || !password, className: "w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200" }, { children: "Savgar" })), showSignup && (jsxRuntime.jsx("div", __assign({ className: "text-center" }, { children: jsxRuntime.jsx("button", __assign({ type: "button", onClick: function () {
+                                        storageManager.set("token", "sagarxyz");
+                                        alert('"token", "sagarxyz"');
+                                    }, className: "text-blue-600 hover:text-blue-700 text-sm font-medium" }, { children: isSignup
+                                        ? "Already have an account? Sign in"
+                                        : "Don't have an account? Sign up" })) })))] })) }))] })) })));
 };
 
 var UserProfile = function (_a) {
