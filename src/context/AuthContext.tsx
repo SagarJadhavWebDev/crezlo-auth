@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser, AuthContextType, AuthProviderProps } from '../types';
+import { setCookie } from '../utils/cookieManager';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -20,6 +21,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       try {
         const storedUser = localStorage.getItem(storageKey);
         if (storedUser && !initialUser) {
+          setCookie('storedUser',storedUser)
           setUser(JSON.parse(storedUser));
         }
       } catch (err) {
@@ -33,6 +35,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   useEffect(() => {
     if (typeof window !== 'undefined' && isInitialized) {
       if (user) {
+        setCookie(storageKey, JSON.stringify(user))
         localStorage.setItem(storageKey, JSON.stringify(user));
       } else {
         localStorage.removeItem(storageKey);
