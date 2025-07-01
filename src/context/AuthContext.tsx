@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password,token }),
       });
 
       const data = await response.json();
