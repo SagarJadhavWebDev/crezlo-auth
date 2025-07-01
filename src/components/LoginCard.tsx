@@ -51,7 +51,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
       handleSubmit();
     }
   };
-
+ console.log('outside66')
   return (
     <div className={`w-full max-w-md mx-auto ${className}`}>
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
