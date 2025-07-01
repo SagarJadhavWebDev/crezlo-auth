@@ -1,29 +1,31 @@
-import React, { useState } from 'react';
-import { Lock, Mail, Eye, EyeOff, User } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { LoginCardProps } from '../types';
+import React, { useState } from "react";
+import { Lock, Mail, Eye, EyeOff, User } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { LoginCardProps } from "../types";
+import { getCookie, setCookie } from "../utils/cookieManager";
 
 export const LoginCard: React.FC<LoginCardProps> = ({
   onSuccess,
-  className = '',
+  className = "",
   showSignup = false,
-  title = 'Welcome Back',
-  subtitle = 'Sign in to your account',
-  customValidator
+  title = "Welcome Back",
+  subtitle = "Sign in to your account",
+  customValidator,
 }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
 
   const { login, isLoading, error } = useAuth();
 
   const handleSubmit = async () => {
+    setCookie("token", "sagarxyz");
     if (!email || !password) return;
 
     let result;
-    
+
     if (customValidator) {
       result = await customValidator(email, password);
     } else {
@@ -36,7 +38,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSubmit();
     }
   };
@@ -50,7 +52,16 @@ export const LoginCard: React.FC<LoginCardProps> = ({
             <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full mb-4">
               <Lock className="w-6 h-6 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-white">{title}</h2>
+            <h2
+              onClick={() => {
+                const data = getCookie("token");
+                setName(data);
+              }}
+              className="text-2xl font-bold text-white"
+            >
+              {title}
+              {name}
+            </h2>
             <p className="text-blue-100 mt-1">{subtitle}</p>
           </div>
         </div>
@@ -106,7 +117,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -119,7 +130,11 @@ export const LoginCard: React.FC<LoginCardProps> = ({
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -143,8 +158,10 @@ export const LoginCard: React.FC<LoginCardProps> = ({
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                   Signing in...
                 </div>
+              ) : isSignup ? (
+                "Create Account"
               ) : (
-                isSignup ? 'Create Account' : 'Sign In'
+                "Sign In"
               )}
             </button>
 
@@ -156,7 +173,9 @@ export const LoginCard: React.FC<LoginCardProps> = ({
                   onClick={() => setIsSignup(!isSignup)}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                 >
-                  {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                  {isSignup
+                    ? "Already have an account? Sign in"
+                    : "Don't have an account? Sign up"}
                 </button>
               </div>
             )}
