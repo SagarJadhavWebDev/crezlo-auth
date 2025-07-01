@@ -1,14 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AuthUser, AuthContextType, AuthProviderProps } from '../types';
-import { setCookie } from '../utils/cookieManager';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { AuthUser, AuthContextType, AuthProviderProps } from "../types";
+import { getCookie, setCookie } from "../utils/cookieManager";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
   initialUser = null,
-  apiEndpoint = '/api/auth',
-  storageKey = 'auth-user'
+  apiEndpoint = "/api/auth",
+  storageKey = "auth-user",
 }) => {
   const [user, setUser] = useState<AuthUser | null>(initialUser);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,15 +17,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   // SSR-safe initialization
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
         const storedUser = localStorage.getItem(storageKey);
         if (storedUser && !initialUser) {
-          setCookie('storedUser',storedUser)
+          setCookie("storedUser", storedUser);
           setUser(JSON.parse(storedUser));
         }
       } catch (err) {
-        console.warn('Failed to load user from localStorage:', err);
+        console.warn("Failed to load user from localStorage:", err);
       }
       setIsInitialized(true);
     }
@@ -33,9 +33,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   // Persist user to localStorage (client-side only)
   useEffect(() => {
-    if (typeof window !== 'undefined' && isInitialized) {
+    if (typeof window !== "undefined" && isInitialized) {
       if (user) {
-        setCookie(storageKey, JSON.stringify(user))
+        setCookie(storageKey, JSON.stringify(user));
         localStorage.setItem(storageKey, JSON.stringify(user));
       } else {
         localStorage.removeItem(storageKey);
@@ -46,12 +46,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
-
+    const token = getCookie("auth");
+    console.log("auth from cookies", token);
+    console.warn("auth from cookies", token);
+    alert(token)
     try {
       const response = await fetch(`${apiEndpoint}/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -62,10 +65,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         setUser(data.user);
         return { success: true, user: data.user };
       } else {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.message || "Login failed");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      const errorMessage = err instanceof Error ? err.message : "Login failed";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -76,9 +79,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const logout = async () => {
     setIsLoading(true);
     try {
-      await fetch(`${apiEndpoint}/logout`, { method: 'POST' });
+      await fetch(`${apiEndpoint}/logout`, { method: "POST" });
     } catch (err) {
-      console.warn('Logout request failed:', err);
+      console.warn("Logout request failed:", err);
     } finally {
       setUser(null);
       setError(null);
@@ -93,20 +96,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     error,
     login,
     logout,
-    isInitialized
+    isInitialized,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
