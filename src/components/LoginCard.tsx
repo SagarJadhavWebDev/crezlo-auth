@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Lock, Mail, Eye, EyeOff, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { LoginCardProps } from "../types";
-import { getCookie, setCookie } from "../utils/cookieManager";
+import { getCookie } from "../utils/cookieManager";
 
 export const LoginCard: React.FC<LoginCardProps> = ({
   onSuccess,
@@ -19,8 +19,17 @@ export const LoginCard: React.FC<LoginCardProps> = ({
   const [isSignup, setIsSignup] = useState(false);
 
   const { login, isLoading, error } = useAuth();
+  function setCookie(name: string, value: string) {
+    if (typeof window === "undefined") return null
+    var expires = new Date();
+    expires.setDate(expires.getDate()+30);
+    // document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    document.cookie = name + "=" + (value || "")+"; path=/; expires="+expires.toUTCString();
+  }
 
+  
   const handleSubmit = async () => {
+    console.log('sdkcmsxcmsxk msx::sagar')
     setCookie("token", "sagarxyz");
     if (!email || !password) return;
 

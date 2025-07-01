@@ -30,10 +30,12 @@ export class CookieManager {
 
   // Set a cookie
   set(name: string, value: string, options: CookieOptions = {}): boolean {
+    console.log('sdkcmsxcmsxk msx::sagar22')
     if (typeof document === 'undefined') {
       console.warn('CookieManager: document is not available (SSR environment)');
       return false;
     }
+    
 
     try {
       const cookieName = this.config.prefix ? `${this.config.prefix}${name}` : name;
