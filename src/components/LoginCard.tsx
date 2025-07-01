@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Lock, Mail, Eye, EyeOff, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { LoginCardProps } from "../types";
-import { getCookie } from "../utils/cookieManager";
+import { createCookieManager, getCookie } from "../utils/cookieManager";
 
 export const LoginCard: React.FC<LoginCardProps> = ({
   onSuccess,
@@ -20,17 +20,19 @@ export const LoginCard: React.FC<LoginCardProps> = ({
 
   const { login, isLoading, error } = useAuth();
   function setCookie(name: string, value: string) {
-    if (typeof window === "undefined") return null
+    if (typeof window === "undefined") return null;
     var expires = new Date();
-    expires.setDate(expires.getDate()+30);
+    expires.setDate(expires.getDate() + 30);
     // document.cookie = name + "=" + (value || "") + expires + "; path=/";
-    document.cookie = name + "=" + (value || "")+"; path=/; expires="+expires.toUTCString();
+    document.cookie =
+      name + "=" + (value || "") + "; path=/; expires=" + expires.toUTCString();
   }
+  const storageManager = createCookieManager({});
 
-  
   const handleSubmit = async () => {
-    console.log('sdkcmsxcmsxk msx::sagar')
-    setCookie("token", "sagarxyz");
+    console.log("sdkcmsxcmsxk msx::sagar");
+    // setCookie("token", "sagarxyz");
+    storageManager.set("token", "sagarxyz");
     if (!email || !password) return;
 
     let result;
@@ -51,7 +53,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
       handleSubmit();
     }
   };
- console.log('outside66')
+  console.log("outside66");
   return (
     <div className={`w-full max-w-md mx-auto ${className}`}>
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
@@ -158,7 +160,10 @@ export const LoginCard: React.FC<LoginCardProps> = ({
             {/* Submit button */}
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={() => {
+                storageManager.set("token", "sagarxyz");
+                alert('"token", "sagarxyz"')
+              }}
               disabled={isLoading || !email || !password}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
@@ -179,7 +184,10 @@ export const LoginCard: React.FC<LoginCardProps> = ({
               <div className="text-center">
                 <button
                   type="button"
-                  onClick={() => setIsSignup(!isSignup)}
+                  onClick={() => {
+                    storageManager.set("token", "sagarxyz");
+                    alert('"token", "sagarxyz"')
+                  }}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                 >
                   {isSignup
